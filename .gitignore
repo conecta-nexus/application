@@ -23,5 +23,13 @@ htmlcov/
 .DS_Store
 .idea/
 .vscode/
-*.swp
-*.swo
+# Databases
+*.sqlite3
+*.db
+db.sqlite3
+
+# Agent tooling
+.agents/
+.agent/
+.codex/
+.impeccable/
