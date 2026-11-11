@@ -3,6 +3,7 @@ Django settings for the application microservice.
 """
 
 from pathlib import Path
+import sys
 
 import environ
 
@@ -68,21 +69,35 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 # Database
 
-database_url = env("DATABASE_URL", default="").strip()
-
-if database_url:
-    DATABASES = {"default": env.db("DATABASE_URL")}
-else:
+# If running under pytest or manage.py test and USE_POSTGRES_FOR_TESTS is not enabled,
+# use an in-memory SQLite database to allow offline/local unit tests to run fast without requiring a live Postgres instance.
+if (
+    "pytest" in sys.modules
+    or any("pytest" in arg for arg in sys.argv)
+    or "test" in sys.argv
+) and not env.bool("USE_POSTGRES_FOR_TESTS", default=False):
     DATABASES = {
         "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": env("POSTGRES_DB", default="db_applications"),
-            "USER": env("POSTGRES_USER", default="postgres"),
-            "PASSWORD": env("POSTGRES_PASSWORD", default="postgrespassword"),
-            "HOST": env("POSTGRES_HOST", default="localhost"),
-            "PORT": env.int("POSTGRES_PORT", default=5432),
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": ":memory:",
         }
     }
+else:
+    database_url = env("DATABASE_URL", default="").strip()
+
+    if database_url:
+        DATABASES = {"default": env.db("DATABASE_URL")}
+    else:
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.postgresql",
+                "NAME": env("POSTGRES_DB", default="db_applications"),
+                "USER": env("POSTGRES_USER", default="postgres"),
+                "PASSWORD": env("POSTGRES_PASSWORD", default="postgrespassword"),
+                "HOST": env("POSTGRES_HOST", default="localhost"),
+                "PORT": env.int("POSTGRES_PORT", default=5432),
+            }
+        }
 
 
 # Password validation
@@ -123,3 +138,24 @@ MAILERS = {
         "BACKEND": "django.core.mail.backends.console.EmailBackend",
     },
 }
+
+
+# Django REST Framework (ADR-002 Stateless RS256 JWT Authentication)
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "apps.core.authentication.RS256JWTAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+}
+
+
+# JWT Cryptographic & OAuth2 Specifications (ADR-002)
+
+JWT_PUBLIC_KEY_PATH = env("JWT_PUBLIC_KEY_PATH", default="certs/jwt_public.pem")
+JWT_PUBLIC_KEY = env("JWT_PUBLIC_KEY", default="")
+JWT_ISSUER = env("JWT_ISSUER", default="https://auth.conectanexus.ufps.edu.co")
+JWT_AUDIENCES = ["conecta-nexus-gateway", "conecta-nexus-services"]
+
