@@ -1,17 +1,22 @@
 """Synchronous client for challenge status validation."""
 
-from functools import lru_cache
-from typing import Any
-from uuid import UUID
+from __future__ import annotations
 
-import httpx
+from functools import lru_cache
+import logging
+from typing import Any
+import uuid
+
 from django.conf import settings
+import httpx
 
 from apps.applications.exceptions import (
     ChallengeNotFoundError,
     ChallengeNotOpenError,
     ChallengeServiceUnavailableError,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ChallengeServiceClient:
@@ -35,12 +40,14 @@ class ChallengeServiceClient:
             return
 
         resolved_base_url = (
-            settings.CHALLENGE_SERVICE_URL if base_url is None else base_url
+            getattr(settings, "CHALLENGE_SERVICE_URL", "http://challenge:8000")
+            if base_url is None
+            else base_url
         ).strip().rstrip("/")
         resolved_timeout = (
             timeout_seconds
             if timeout_seconds is not None
-            else settings.CHALLENGE_SERVICE_TIMEOUT_SECONDS
+            else getattr(settings, "CHALLENGE_SERVICE_TIMEOUT_SECONDS", 3.0)
         )
 
         if not resolved_base_url:
@@ -60,17 +67,27 @@ class ChallengeServiceClient:
 
     def validate_open_challenge(
         self,
-        challenge_id: UUID | str,
+        challenge_id: uuid.UUID | str,
+        token: str | None = None,
     ) -> dict[str, Any]:
-        """Return challenge data when it exists and its status is OPEN."""
+        """Return challenge data when it exists and its status is OPEN.
+
+        Raises:
+            ChallengeNotFoundError: Challenge not found (404).
+            ChallengeNotOpenError: Challenge status is not OPEN (RB-03).
+            ChallengeServiceUnavailableError: Challenge service down, timed out, or invalid payload.
+        """
         normalized_id = str(challenge_id)
         endpoint = f"/api/v1/challenges/{normalized_id}"
+        headers: dict[str, str] = {"Accept": "application/json"}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
 
         try:
-            response = self._http_client.get(endpoint)
+            response = self._http_client.get(endpoint, headers=headers)
         except httpx.RequestError as exc:
             raise ChallengeServiceUnavailableError(
-                "Challenge service request failed"
+                f"Challenge service request failed: {exc}"
             ) from exc
 
         if response.status_code == httpx.codes.NOT_FOUND:
@@ -116,6 +133,12 @@ class ChallengeServiceClient:
         """Release the owned HTTP connection pool."""
         if self._owns_http_client:
             self._http_client.close()
+
+    def __enter__(self) -> ChallengeServiceClient:
+        return self
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        self.close()
 
 
 @lru_cache(maxsize=1)
