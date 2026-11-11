@@ -40,7 +40,7 @@ requires-dist = [
     { name = "django", specifier = ">=6.1.2" },
     { name = "django-environ", specifier = ">=0.12,<1.0" },
     { name = "djangorestframework", specifier = ">=3.18.3" },
-    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "httpx", specifier = ">=0.28,<1.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2,<4.0" },
     { name = "pyjwt", extras = ["crypto"], specifier = ">=2.8.0" },
 ]
