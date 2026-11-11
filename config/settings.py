@@ -172,3 +172,9 @@ JWT_PUBLIC_KEY = env("JWT_PUBLIC_KEY", default="")
 JWT_ISSUER = env("JWT_ISSUER", default="https://auth.conectanexus.ufps.edu.co")
 JWT_AUDIENCES = ["conecta-nexus-gateway", "conecta-nexus-services"]
 
+# Inter-Service Communication Settings
+PROFILE_SERVICE_URL = env("PROFILE_SERVICE_URL", default="http://profile:8000")
+INTERNAL_SERVICE_TOKEN = env("INTERNAL_SERVICE_TOKEN", default="")
+CHALLENGE_SERVICE_URL = env("CHALLENGE_SERVICE_URL", default="http://challenge:8000")
+
+

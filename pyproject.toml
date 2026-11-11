@@ -15,10 +15,10 @@ dependencies = [
 dev = [
     "pytest>=9.1.1",
     "pytest-django>=4.9.0",
+    "respx>=0.23.1",
 ]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings"
 python_files = ["tests.py", "test_*.py", "*_tests.py"]
 addopts = "-ra --strict-markers"
-
