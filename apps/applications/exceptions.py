@@ -52,7 +52,7 @@ class ProfileServiceUnavailableError(ApplicationDomainError):
 
 
 class ChallengeNotFoundError(ApplicationDomainError):
-    """Raised when the specified challenge is not found in the challenge microservice."""
+    """Raised when the target challenge does not exist."""
 
     def __init__(self, challenge_id: str = "", message: str | None = None) -> None:
         self.challenge_id = str(challenge_id)
@@ -66,7 +66,7 @@ class ChallengeNotFoundError(ApplicationDomainError):
 
 
 class ChallengeNotOpenError(ApplicationDomainError):
-    """Raised when the challenge is not open for applications."""
+    """Raised when applications cannot be submitted to a challenge."""
 
     def __init__(
         self,
@@ -78,6 +78,8 @@ class ChallengeNotOpenError(ApplicationDomainError):
         self.status = status
         msg = message or (
             f"Challenge '{challenge_id}' is not open for applications (status: {status})"
+            if challenge_id and status
+            else f"Challenge '{challenge_id}' is not open for applications."
             if challenge_id
             else "Challenge is not open for student applications."
         )
@@ -86,12 +88,9 @@ class ChallengeNotOpenError(ApplicationDomainError):
 
 
 class ChallengeServiceUnavailableError(ApplicationDomainError):
-    """Raised when the challenge microservice is unavailable, times out, or returns 5xx."""
+    """Raised when Challenge cannot provide a valid response."""
 
-    def __init__(
-        self,
-        message: str = "Challenge service is currently unavailable.",
-    ) -> None:
+    def __init__(self, message: str = "Challenge service is currently unavailable.") -> None:
         super().__init__(message)
         self.message = message
 
