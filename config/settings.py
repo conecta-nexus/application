@@ -141,6 +141,18 @@ MAILERS = {
 }
 
 
+# Internal services
+
+CHALLENGE_SERVICE_URL = env(
+    "CHALLENGE_SERVICE_URL",
+    default="http://challenge:8000",
+).rstrip("/")
+CHALLENGE_SERVICE_TIMEOUT_SECONDS = env.float(
+    "CHALLENGE_SERVICE_TIMEOUT_SECONDS",
+    default=3.0,
+)
+
+
 # Django REST Framework (ADR-002 Stateless RS256 JWT Authentication)
 
 REST_FRAMEWORK = {
