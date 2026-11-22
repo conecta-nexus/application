@@ -38,7 +38,7 @@ def test_validate_open_challenge_returns_payload() -> None:
 
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.method == "GET"
-        assert request.url.path == f"/api/v1/challenges/{challenge_id}"
+        assert request.url.path == f"/api/v1/challenges/catalog/{challenge_id}"
         return httpx.Response(
             200,
             json=challenge_payload(challenge_id, "OPEN"),

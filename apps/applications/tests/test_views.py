@@ -81,7 +81,7 @@ def test_create_application_success(
     api_client.force_authenticate(user=student_user)
 
     # Mock challenge service -> OPEN challenge
-    respx.get(f"{CHALLENGE_BASE_URL}/api/v1/challenges/{challenge_id}").respond(
+    respx.get(f"{CHALLENGE_BASE_URL}/api/v1/challenges/catalog/{challenge_id}").respond(
         200,
         json={"id": str(challenge_id), "status": "OPEN", "title": "Machine Learning Model"},
     )
@@ -213,7 +213,7 @@ def test_create_application_challenge_missing(
     """Challenge not found in challenge microservice returns 404 Not Found."""
     api_client.force_authenticate(user=student_user)
 
-    respx.get(f"{CHALLENGE_BASE_URL}/api/v1/challenges/{challenge_id}").respond(
+    respx.get(f"{CHALLENGE_BASE_URL}/api/v1/challenges/catalog/{challenge_id}").respond(
         404,
         json={"detail": "Not found"},
     )
@@ -239,7 +239,7 @@ def test_create_application_challenge_not_open(
     """Challenge not in OPEN status returns 422 Unprocessable Content."""
     api_client.force_authenticate(user=student_user)
 
-    respx.get(f"{CHALLENGE_BASE_URL}/api/v1/challenges/{challenge_id}").respond(
+    respx.get(f"{CHALLENGE_BASE_URL}/api/v1/challenges/catalog/{challenge_id}").respond(
         200,
         json={"id": str(challenge_id), "status": non_open_status, "title": "Sample"},
     )
@@ -264,7 +264,7 @@ def test_create_application_student_ineligible_semester(
     """Student semester < 6 or > 10 returns 400 Bad Request."""
     api_client.force_authenticate(user=student_user)
 
-    respx.get(f"{CHALLENGE_BASE_URL}/api/v1/challenges/{challenge_id}").respond(
+    respx.get(f"{CHALLENGE_BASE_URL}/api/v1/challenges/catalog/{challenge_id}").respond(
         200,
         json={"id": str(challenge_id), "status": "OPEN"},
     )
@@ -299,7 +299,7 @@ def test_create_application_missing_consent(
     """Student missing Habeas Data consent returns 400 Bad Request."""
     api_client.force_authenticate(user=student_user)
 
-    respx.get(f"{CHALLENGE_BASE_URL}/api/v1/challenges/{challenge_id}").respond(
+    respx.get(f"{CHALLENGE_BASE_URL}/api/v1/challenges/catalog/{challenge_id}").respond(
         200,
         json={"id": str(challenge_id), "status": "OPEN"},
     )
@@ -334,7 +334,7 @@ def test_create_application_profile_not_found(
     """Profile not found in profile service returns 400 Bad Request."""
     api_client.force_authenticate(user=student_user)
 
-    respx.get(f"{CHALLENGE_BASE_URL}/api/v1/challenges/{challenge_id}").respond(
+    respx.get(f"{CHALLENGE_BASE_URL}/api/v1/challenges/catalog/{challenge_id}").respond(
         200,
         json={"id": str(challenge_id), "status": "OPEN"},
     )
@@ -363,7 +363,7 @@ def test_create_application_challenge_service_down(
     """When challenge service is unreachable or returns 5xx, return 502 Bad Gateway."""
     api_client.force_authenticate(user=student_user)
 
-    respx.get(f"{CHALLENGE_BASE_URL}/api/v1/challenges/{challenge_id}").respond(503)
+    respx.get(f"{CHALLENGE_BASE_URL}/api/v1/challenges/catalog/{challenge_id}").respond(503)
 
     payload = {
         "challenge_id": str(challenge_id),
@@ -384,7 +384,7 @@ def test_create_application_profile_service_down(
     """When profile service is unreachable or returns 5xx, return 502 Bad Gateway."""
     api_client.force_authenticate(user=student_user)
 
-    respx.get(f"{CHALLENGE_BASE_URL}/api/v1/challenges/{challenge_id}").respond(
+    respx.get(f"{CHALLENGE_BASE_URL}/api/v1/challenges/catalog/{challenge_id}").respond(
         200,
         json={"id": str(challenge_id), "status": "OPEN"},
     )

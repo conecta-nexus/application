@@ -78,7 +78,7 @@ class ChallengeServiceClient:
             ChallengeServiceUnavailableError: Challenge service down, timed out, or invalid payload.
         """
         normalized_id = str(challenge_id)
-        endpoint = f"/api/v1/challenges/{normalized_id}"
+        endpoint = f"/api/v1/challenges/catalog/{normalized_id}"
         headers: dict[str, str] = {"Accept": "application/json"}
         if token:
             headers["Authorization"] = f"Bearer {token}"
