@@ -190,3 +190,66 @@ class ProfileServiceClient:
             )
 
         return data
+
+    def get_student_contact(
+        self,
+        student_id: uuid.UUID | str,
+        token: str | None = None,
+    ) -> dict[str, Any]:
+        """Retrieve student contact channels from the internal eligibility endpoint (RB-05)."""
+        url = f"{self.base_url}/api/v1/profiles/internal/{student_id}/eligibility"
+        auth_token = token if token is not None else self.token
+        headers: dict[str, str] = {"Accept": "application/json"}
+        if auth_token:
+            headers["Authorization"] = f"Bearer {auth_token}"
+
+        try:
+            response = self._client.get(url, headers=headers)
+        except (httpx.TimeoutException, httpx.NetworkError, httpx.TransportError) as exc:
+            raise ProfileServiceUnavailableError(
+                f"Profile service communication error: {exc}"
+            ) from exc
+
+        if response.status_code == 404:
+            raise StudentProfileNotFoundError("Student profile not found for the specified user.")
+        if response.status_code != 200:
+            raise ProfileServiceUnavailableError(
+                f"Profile service returned unexpected status {response.status_code}."
+            )
+        data = response.json()
+        contact_info = data.get("contact_info") if isinstance(data, dict) else {}
+        return contact_info if isinstance(contact_info, dict) else {}
+
+    def get_company_contact(
+        self,
+        company_id: uuid.UUID | str,
+        token: str | None = None,
+    ) -> dict[str, Any]:
+        """Retrieve company contact channels from the internal company contact endpoint (RB-05)."""
+        url = f"{self.base_url}/api/v1/profiles/internal/companies/{company_id}/contact"
+        auth_token = token if token is not None else self.token
+        headers: dict[str, str] = {"Accept": "application/json"}
+        if auth_token:
+            headers["Authorization"] = f"Bearer {auth_token}"
+
+        try:
+            response = self._client.get(url, headers=headers)
+        except (httpx.TimeoutException, httpx.NetworkError, httpx.TransportError) as exc:
+            raise ProfileServiceUnavailableError(
+                f"Profile service communication error: {exc}"
+            ) from exc
+
+        if response.status_code == 404:
+            return {}
+        if response.status_code != 200:
+            raise ProfileServiceUnavailableError(
+                f"Profile service returned unexpected status {response.status_code}."
+            )
+        data = response.json()
+        contact_info = data.get("contact_info") if isinstance(data, dict) else {}
+        if not isinstance(contact_info, dict):
+            return {}
+        return {
+            "business_name": data.get("business_name"),
+            **contact_info,
+        }
