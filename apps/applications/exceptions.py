@@ -104,3 +104,15 @@ class DuplicateApplicationError(ApplicationDomainError):
     ) -> None:
         super().__init__(message)
         self.message = message
+
+
+class ApplicationNotFoundError(ApplicationDomainError):
+    """Raised when the requested application does not exist."""
+
+
+class InvalidApplicationTransitionError(ApplicationDomainError):
+    """Raised when an application status transition conflicts with its current state or challenge lock."""
+
+
+class ChallengeOwnershipError(ApplicationDomainError):
+    """Raised when a corporate user tries to decide on an application for a challenge they do not own."""

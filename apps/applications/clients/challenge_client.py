@@ -129,6 +129,86 @@ class ChallengeServiceClient:
 
         return payload
 
+    def get_challenge_internal(
+        self,
+        challenge_id: uuid.UUID | str,
+        token: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch challenge metadata (owner company_id, title, status) via internal lookup."""
+        normalized_id = str(challenge_id)
+        endpoint = f"/api/v1/challenges/internal/{normalized_id}"
+        auth_token = token if token is not None else getattr(settings, "INTERNAL_SERVICE_TOKEN", "")
+        headers: dict[str, str] = {"Accept": "application/json"}
+        if auth_token:
+            headers["Authorization"] = f"Bearer {auth_token}"
+
+        try:
+            response = self._http_client.get(endpoint, headers=headers)
+        except httpx.RequestError as exc:
+            raise ChallengeServiceUnavailableError(
+                f"Challenge service request failed: {exc}"
+            ) from exc
+
+        if response.status_code == httpx.codes.NOT_FOUND:
+            raise ChallengeNotFoundError(normalized_id)
+        if response.status_code >= httpx.codes.INTERNAL_SERVER_ERROR:
+            raise ChallengeServiceUnavailableError(
+                f"Challenge service returned HTTP {response.status_code}"
+            )
+        try:
+            response.raise_for_status()
+            payload = response.json()
+        except (httpx.HTTPStatusError, ValueError) as exc:
+            raise ChallengeServiceUnavailableError(
+                f"Challenge service returned invalid response: {exc}"
+            ) from exc
+        if not isinstance(payload, dict):
+            raise ChallengeServiceUnavailableError(
+                "Challenge service returned an invalid response payload"
+            )
+        return payload
+
+    def lock_challenge_in_progress(
+        self,
+        challenge_id: uuid.UUID | str,
+        token: str | None = None,
+    ) -> dict[str, Any]:
+        """Atomically transition an OPEN challenge to IN_PROGRESS in Challenge service (RB-04)."""
+        normalized_id = str(challenge_id)
+        endpoint = f"/api/v1/challenges/internal/{normalized_id}/lock"
+        auth_token = token if token is not None else getattr(settings, "INTERNAL_SERVICE_TOKEN", "")
+        headers: dict[str, str] = {"Accept": "application/json"}
+        if auth_token:
+            headers["Authorization"] = f"Bearer {auth_token}"
+
+        try:
+            response = self._http_client.post(endpoint, headers=headers)
+        except httpx.RequestError as exc:
+            raise ChallengeServiceUnavailableError(
+                f"Challenge service lock request failed: {exc}"
+            ) from exc
+
+        if response.status_code == httpx.codes.NOT_FOUND:
+            raise ChallengeNotFoundError(normalized_id)
+        if response.status_code in (httpx.codes.CONFLICT, httpx.codes.UNPROCESSABLE_ENTITY):
+            raise ChallengeNotOpenError(normalized_id, "LOCKED")
+        if response.status_code >= httpx.codes.INTERNAL_SERVER_ERROR:
+            raise ChallengeServiceUnavailableError(
+                f"Challenge service returned HTTP {response.status_code}"
+            )
+        try:
+            response.raise_for_status()
+            payload = response.json()
+        except (httpx.HTTPStatusError, ValueError) as exc:
+            raise ChallengeServiceUnavailableError(
+                f"Challenge service returned invalid lock response: {exc}"
+            ) from exc
+        if not isinstance(payload, dict):
+            raise ChallengeServiceUnavailableError(
+                "Challenge service returned an invalid lock payload"
+            )
+        return payload
+
     def close(self) -> None:
         """Release the owned HTTP connection pool."""
         if self._owns_http_client:
